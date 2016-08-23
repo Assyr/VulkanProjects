@@ -7,6 +7,7 @@
 //Window size
 const int WIDTH = 800;
 const int HEIGHT = 600;
+
 template <typename T>
 class VDeleter {
 public:
@@ -58,6 +59,7 @@ public:
 	}
 private:
 	GLFWwindow* vulkanWindow;
+	VDeleter<VkInstance> instance{ vkDestroyInstance };
 
 	void initWindow() {
 		glfwInit();
@@ -66,8 +68,42 @@ private:
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); //Disable window resize
 		vulkanWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 	}
-	void initVulkan() {
 
+	void createInstance() {
+		VkApplicationInfo applicationInfo = {}; //default struct
+		applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		applicationInfo.pApplicationName = "Rendering a Triangle";
+		applicationInfo.pEngineName = "No Engine";
+		applicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		applicationInfo.apiVersion = VK_API_VERSION_1_0; //Which vulkan api version to use
+
+		VkInstanceCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		createInfo.pApplicationInfo = &applicationInfo;
+
+		unsigned int glfwExtensionCount = 0;
+		const char** glfwExtensions;
+
+		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount); //Get the desired global extensions
+
+		//Specify how many extensions 
+		createInfo.enabledExtensionCount = glfwExtensionCount;
+		//Supply the extensions
+		createInfo.ppEnabledExtensionNames = glfwExtensions;
+
+		createInfo.enabledLayerCount = 0;
+
+		//We have now specified everything we need in order to create a Vulkan instance
+
+		//so, let's make one.
+		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+			throw std::runtime_error("vkCreateInstance failed");
+		}
+
+	}
+
+	void initVulkan() {
+		createInstance();
 	}
 
 	void mainLoop() {
